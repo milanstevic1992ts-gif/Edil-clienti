@@ -31,14 +31,17 @@ public class Ge360DeepLinkActivity extends Activity {
             return;
         }
 
-        long clientId = parseLong(uri.getQueryParameter("clientId"));
-        if (clientId <= 0) {
+        long localClientId = parseLong(uri.getQueryParameter("localClientId"));
+        String universalClientId = safe(uri.getQueryParameter("clientId"));
+        ClientDbHelper db = new ClientDbHelper(this);
+        Client client = localClientId > 0 ? db.get(localClientId) : db.getByGe360Id(universalClientId);
+        if (client == null) {
             openMain();
             return;
         }
 
-        if ("/jobsite-report".equals(uri.getPath())) receiveJobsiteReport(clientId, uri);
-        openClient(clientId);
+        if ("/jobsite-report".equals(uri.getPath())) receiveJobsiteReport(client.id, uri);
+        openClient(client.id);
     }
 
     private void receiveJobsiteReport(long clientId, Uri uri) {
