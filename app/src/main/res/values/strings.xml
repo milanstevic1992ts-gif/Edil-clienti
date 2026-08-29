@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">EDIL Clienti</string>
+    <string name="tagline">EDIL MILAN STEVIC · Trieste</string>
+    <string name="search_hint">Cerca nome, telefono, email o indirizzo</string>
+    <string name="new_client">Nuovo cliente</string>
+    <string name="import_contact">Importa rubrica</string>
+    <string name="backup">Backup</string>
+    <string name="restore">Ripristina</string>
+    <string name="empty_clients">Nessun cliente salvato\nAggiungilo manualmente o importalo dalla rubrica.</string>
+</resources>
