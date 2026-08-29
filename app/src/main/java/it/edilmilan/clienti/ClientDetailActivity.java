@@ -74,6 +74,7 @@ public class ClientDetailActivity extends Activity {
         findViewById(R.id.detailCallButton).setOnClickListener(v -> callClient());
         findViewById(R.id.detailWhatsappButton).setOnClickListener(v -> openWhatsApp());
         findViewById(R.id.detailAttrezziButton).setOnClickListener(v -> openInAttrezzi());
+        findViewById(R.id.detailMessaggiButton).setOnClickListener(v -> openInMessaggi());
         bindTemperature(R.id.tempHot, "Caldo");
         bindTemperature(R.id.tempGrow, "Da coltivare");
         bindTemperature(R.id.tempCold, "Freddo");
@@ -229,5 +230,11 @@ public class ClientDetailActivity extends Activity {
         Ge360Bridge.Result result = Ge360Bridge.openInAttrezzi(this, client);
         Toast.makeText(this, result.message, result.success ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
         ge360Status.setText(Ge360Bridge.status(this, clientId));
+    }
+
+    private void openInMessaggi() {
+        if (client == null) return;
+        Ge360Bridge.Result result = Ge360MessaggiBridge.open(this, client);
+        Toast.makeText(this, result.message, result.success ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
     }
 }
