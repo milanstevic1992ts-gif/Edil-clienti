@@ -140,7 +140,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
                 "last_error TEXT NOT NULL DEFAULT ''," +
                 "created_at INTEGER NOT NULL," +
                 "updated_at INTEGER NOT NULL DEFAULT 0)");
-        createOutboxIndexes(db);
+        if (hasColumn(db, OUTBOX, "next_attempt_at")) createOutboxIndexes(db);
     }
 
     private void createOutboxIndexes(SQLiteDatabase db) {
