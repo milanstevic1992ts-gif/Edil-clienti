@@ -14,6 +14,7 @@ App Android nativa per la gestione clienti di **EDIL MILAN STEVIC — Restauri &
 - salvataggio nella rubrica con scheda già compilata e scelta dell’account Google/Telefono;
 - aggiornamento del contatto originario quando il cliente è stato importato dalla rubrica;
 - backup JSON e ripristino con modalità **Unisci** o **Sostituisci**.
+- layout ottimizzato per smartphone con schede compatte, iniziali cliente e pulsante Salva sempre visibile.
 
 I dati dell’app sono conservati in un database SQLite privato sul dispositivo. Il permesso di lettura della rubrica viene richiesto soltanto quando si usa **Importa rubrica**.
 

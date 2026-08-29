@@ -12,9 +12,11 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -48,15 +50,14 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
         searchInput = findViewById(R.id.searchInput);
         countLabel = findViewById(R.id.countLabel);
         ListView list = findViewById(R.id.clientList);
-        TextView empty = findViewById(R.id.emptyView);
+        View empty = findViewById(R.id.emptyView);
         adapter = new ClientAdapter(this, this);
         list.setAdapter(adapter);
         list.setEmptyView(empty);
 
         findViewById(R.id.addButton).setOnClickListener(v -> openEditor(null, null));
         findViewById(R.id.importButton).setOnClickListener(v -> startContactImport());
-        findViewById(R.id.backupButton).setOnClickListener(v -> createBackup());
-        findViewById(R.id.restoreButton).setOnClickListener(v -> chooseBackup());
+        findViewById(R.id.menuButton).setOnClickListener(this::showDataMenu);
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
@@ -64,6 +65,18 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
             @Override public void afterTextChanged(Editable s) { }
         });
         loadClients();
+    }
+
+    private void showDataMenu(View anchor) {
+        PopupMenu popup = new PopupMenu(this, anchor);
+        popup.getMenu().add(0, 1, 0, "Crea backup");
+        popup.getMenu().add(0, 2, 1, "Ripristina backup");
+        popup.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == 1) createBackup();
+            else if (item.getItemId() == 2) chooseBackup();
+            return true;
+        });
+        popup.show();
     }
 
     @Override protected void onResume() {

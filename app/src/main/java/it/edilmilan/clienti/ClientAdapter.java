@@ -48,6 +48,7 @@ public class ClientAdapter extends BaseAdapter {
         }
         Client client = getItem(position);
         holder.name.setText(client.fullName().isEmpty() ? "Cliente senza nome" : client.fullName());
+        holder.initials.setText(initials(client));
         holder.phone.setText(client.phone.isEmpty() ? "Nessun telefono" : client.phone);
         String details = client.email;
         if (!client.address.isEmpty()) details += (details.isEmpty() ? "" : "\n") + client.address;
@@ -62,10 +63,18 @@ public class ClientAdapter extends BaseAdapter {
         return convertView;
     }
 
+    private String initials(Client client) {
+        StringBuilder value = new StringBuilder();
+        if (!client.firstName.isEmpty()) value.append(Character.toUpperCase(client.firstName.charAt(0)));
+        if (!client.lastName.isEmpty()) value.append(Character.toUpperCase(client.lastName.charAt(0)));
+        return value.length() == 0 ? "?" : value.toString();
+    }
+
     private static class ViewHolder {
-        final TextView name, phone, details;
+        final TextView initials, name, phone, details;
         final Button call, whatsapp, edit;
         ViewHolder(View view) {
+            initials = view.findViewById(R.id.clientInitials);
             name = view.findViewById(R.id.clientName);
             phone = view.findViewById(R.id.clientPhone);
             details = view.findViewById(R.id.clientDetails);

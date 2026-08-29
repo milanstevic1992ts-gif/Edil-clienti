@@ -3,71 +3,67 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="14dp"
+    android:padding="13dp"
     android:background="@drawable/card_background">
 
-    <TextView
-        android:id="@+id/clientName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/black"
-        android:textSize="18sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/clientPhone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="@color/text_secondary"
-        android:textSize="15sp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+        <TextView
+            android:id="@+id/clientInitials"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/avatar_circle"
+            android:gravity="center"
+            android:textColor="@color/black"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/clientName" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/black" android:textSize="17sp" android:textStyle="bold" />
+            <TextView android:id="@+id/clientPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:textColor="@color/text_secondary" android:textSize="14sp" />
+        </LinearLayout>
+        <Button
+            android:id="@+id/editButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/button_soft"
+            android:contentDescription="Modifica cliente"
+            android:text="✎"
+            android:textAllCaps="false"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/clientDetails"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="5dp"
+        android:ellipsize="end"
         android:maxLines="2"
         android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
+        android:textSize="12sp" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:orientation="horizontal">
-
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:orientation="horizontal">
         <Button
             android:id="@+id/callButton"
             android:layout_width="0dp"
-            android:layout_height="42dp"
+            android:layout_height="44dp"
             android:layout_weight="1"
             android:background="@drawable/button_dark"
-            android:text="Chiama"
+            android:text="☎  Chiama"
             android:textAllCaps="false"
-            android:textColor="@color/white" />
-
+            android:textColor="@color/white"
+            android:textStyle="bold" />
         <Button
             android:id="@+id/whatsappButton"
             android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_marginStart="8dp"
+            android:layout_height="44dp"
+            android:layout_marginStart="9dp"
             android:layout_weight="1"
             android:background="@drawable/button_primary"
             android:text="WhatsApp"
             android:textAllCaps="false"
             android:textColor="@color/black"
             android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/editButton"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:background="@drawable/button_dark"
-            android:text="Modifica"
-            android:textAllCaps="false"
-            android:textColor="@color/white" />
     </LinearLayout>
 </LinearLayout>

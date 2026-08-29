@@ -8,138 +8,68 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingStart="18dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="18dp"
+        android:paddingTop="15dp"
+        android:paddingEnd="10dp"
         android:paddingBottom="15dp"
         android:background="@color/black">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textColor="@color/white"
-            android:textSize="26sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/tagline"
-            android:textColor="@color/orange"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/app_name" android:textColor="@color/white" android:textSize="25sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="I tuoi clienti, sempre ordinati" android:textColor="#BDB7B3" android:textSize="12sp" />
+        </LinearLayout>
+        <Button android:id="@+id/menuButton" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/button_dark" android:contentDescription="Menu dati e backup" android:text="⋮" android:textColor="@color/white" android:textSize="26sp" />
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/searchInput"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="14dp"
-        android:background="@drawable/field_background"
-        android:hint="@string/search_hint"
-        android:imeOptions="actionSearch"
-        android:inputType="text"
-        android:maxLines="1"
-        android:textColor="@color/black"
-        android:textColorHint="@color/text_secondary" />
-
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="14dp"
-            android:paddingBottom="8dp">
-
-            <Button
-                android:id="@+id/addButton"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:background="@drawable/button_primary"
-                android:text="＋  Nuovo cliente"
-                android:textAllCaps="false"
-                android:textColor="@color/black"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/importButton"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/button_dark"
-                android:text="⇩  Importa rubrica"
-                android:textAllCaps="false"
-                android:textColor="@color/white" />
-
-            <Button
-                android:id="@+id/backupButton"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/button_dark"
-                android:text="Backup"
-                android:textAllCaps="false"
-                android:textColor="@color/white" />
-
-            <Button
-                android:id="@+id/restoreButton"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/button_dark"
-                android:text="Ripristina"
-                android:textAllCaps="false"
-                android:textColor="@color/white" />
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp">
+        <EditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/field_background"
+            android:drawableStart="@android:drawable/ic_menu_search"
+            android:drawablePadding="10dp"
+            android:hint="Cerca un cliente…"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textColor="@color/black"
+            android:textColorHint="@color/text_secondary" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+            <Button android:id="@+id/addButton" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:background="@drawable/button_primary" android:text="＋  Nuovo cliente" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
+            <Button android:id="@+id/importButton" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="10dp" android:layout_weight="1" android:background="@drawable/button_outline" android:text="⇩  Dalla rubrica" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
         </LinearLayout>
-    </HorizontalScrollView>
+    </LinearLayout>
 
-    <TextView
-        android:id="@+id/countLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="5dp"
-        android:textColor="@color/text_secondary"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="18dp" android:paddingTop="3dp" android:paddingEnd="18dp" android:paddingBottom="7dp">
+        <TextView android:id="@+id/countLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ORDINE A–Z" android:textColor="@color/text_secondary" android:textSize="10sp" android:textStyle="bold" />
+    </LinearLayout>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
         <ListView
             android:id="@+id/clientList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:divider="@android:color/transparent"
-            android:dividerHeight="10dp"
+            android:dividerHeight="9dp"
             android:paddingStart="14dp"
-            android:paddingTop="5dp"
+            android:paddingTop="3dp"
             android:paddingEnd="14dp"
             android:paddingBottom="18dp" />
-
-        <TextView
-            android:id="@+id/emptyView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:padding="30dp"
-            android:text="@string/empty_clients"
-            android:textAlignment="center"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp" />
+        <LinearLayout android:id="@+id/emptyView" android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center" android:orientation="vertical" android:padding="36dp">
+            <TextView android:layout_width="72dp" android:layout_height="72dp" android:gravity="center" android:background="@drawable/avatar_circle" android:text="＋" android:textColor="@color/black" android:textSize="36sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:gravity="center" android:text="Nessun cliente salvato" android:textColor="@color/black" android:textSize="18sp" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:gravity="center" android:text="Aggiungilo manualmente oppure importalo dalla rubrica del telefono." android:textColor="@color/text_secondary" android:textSize="14sp" />
+        </LinearLayout>
     </FrameLayout>
 </LinearLayout>
