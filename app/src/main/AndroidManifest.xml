@@ -9,6 +9,7 @@
     <queries>
         <package android:name="com.edilmilanstevic.attrezzi" />
         <package android:name="com.ge360.messaggi" />
+        <package android:name="com.edilmilanstevic.preventivi" />
     </queries>
 
     <application
@@ -51,6 +52,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ge360" android:host="clienti" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ge360" android:host="client" />
             </intent-filter>
         </activity>
 
