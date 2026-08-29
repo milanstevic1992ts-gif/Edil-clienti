@@ -44,8 +44,9 @@
             </LinearLayout>
 
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:background="@drawable/card_background" android:orientation="vertical" android:padding="13dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GE360 · CANTIERE CONDIVISO" android:textColor="@color/text_secondary" android:textSize="11sp" android:textStyle="bold" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GE360 · APP COLLEGATE" android:textColor="@color/text_secondary" android:textSize="11sp" android:textStyle="bold" />
                 <Button android:id="@+id/detailAttrezziButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:background="@drawable/button_primary" android:text="🧰  Apri questo cliente in Attrezzi" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
+                <Button android:id="@+id/detailMessaggiButton" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp" android:background="@drawable/button_dark" android:text="💬  Messaggi per questo cliente" android:textAllCaps="false" android:textColor="@color/white" android:textStyle="bold" />
                 <TextView android:id="@+id/ge360Status" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:background="@drawable/button_soft" android:padding="9dp" android:text="Nessun collegamento con Attrezzi ancora eseguito" android:textColor="@color/text_secondary" android:textSize="12sp" />
             </LinearLayout>
 
