@@ -17,7 +17,11 @@
     "estimate-create-launch",
     "local-backup",
     "local-bridge",
-    "event-outbox"
+    "sqlite-event-outbox",
+    "event-envelope-v2",
+    "idempotent-event-enqueue",
+    "retry-backoff",
+    "dead-letter"
   ],
   "publishes": [
     "client.temperature.changed",
@@ -53,6 +57,14 @@
       "com.edilmilanstevic.preventivi"
     ],
     "fallback": "ge360-deep-link"
+  },
+  "delivery": {
+    "outbox": "sqlite:outbox_events",
+    "persistBeforeSend": true,
+    "eventEnvelope": "v2",
+    "maxAttempts": 8,
+    "retry": "exponential-backoff",
+    "deadLetter": true
   },
   "bridgeManager": {
     "discoverable": true,
