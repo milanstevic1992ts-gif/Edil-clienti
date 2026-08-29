@@ -29,7 +29,7 @@ public class ClientDetailActivity extends Activity {
     private Client client;
     private long clientId;
     private TextView name, phase, temperature, followUpBadge, pulseValue, pulseTrend, aiTemperature;
-    private TextView phone, email, address, birthday, followUp, notes, emptyHistory;
+    private TextView phone, email, address, birthday, followUp, notes, emptyHistory, ge360Status;
     private ProgressBar pulseBar;
     private LinearLayout historyContainer;
 
@@ -65,6 +65,7 @@ public class ClientDetailActivity extends Activity {
         notes = findViewById(R.id.detailNotes);
         emptyHistory = findViewById(R.id.emptyHistory);
         historyContainer = findViewById(R.id.historyContainer);
+        ge360Status = findViewById(R.id.ge360Status);
     }
 
     private void wireActions() {
@@ -72,6 +73,7 @@ public class ClientDetailActivity extends Activity {
         findViewById(R.id.detailEditButton).setOnClickListener(v -> openEditor());
         findViewById(R.id.detailCallButton).setOnClickListener(v -> callClient());
         findViewById(R.id.detailWhatsappButton).setOnClickListener(v -> openWhatsApp());
+        findViewById(R.id.detailAttrezziButton).setOnClickListener(v -> openInAttrezzi());
         bindTemperature(R.id.tempHot, "Caldo");
         bindTemperature(R.id.tempGrow, "Da coltivare");
         bindTemperature(R.id.tempCold, "Freddo");
@@ -116,6 +118,7 @@ public class ClientDetailActivity extends Activity {
         birthday.setText("Compleanno  ·  " + valueOrDash(client.birthday));
         followUp.setText("Follow-up  ·  " + valueOrDash(client.followUp));
         notes.setText("Note  ·  " + valueOrDash(client.notes));
+        ge360Status.setText(Ge360Bridge.status(this, clientId));
         Button callButton = findViewById(R.id.detailCallButton);
         Button whatsappButton = findViewById(R.id.detailWhatsappButton);
         callButton.setEnabled(!client.phone.isEmpty());
@@ -219,5 +222,12 @@ public class ClientDetailActivity extends Activity {
         } catch (Exception e) {
             Toast.makeText(this, "Impossibile aprire WhatsApp", Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void openInAttrezzi() {
+        if (client == null) return;
+        Ge360Bridge.Result result = Ge360Bridge.openInAttrezzi(this, client);
+        Toast.makeText(this, result.message, result.success ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
+        ge360Status.setText(Ge360Bridge.status(this, clientId));
     }
 }
