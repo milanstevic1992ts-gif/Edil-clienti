@@ -15,14 +15,18 @@ Gli UUID vengono creati una sola volta, migrati per i record esistenti e inclusi
 - pubblicazione contesto cliente/cantiere;
 - handoff verso Attrezzi;
 - apertura contestuale di GE360 Messaggi;
+- creazione contestuale di un preventivo in EDIL Preventivi;
 - ricezione report di ritorno da Attrezzi;
+- ritorno da Preventivi alla scheda cliente tramite UUID universale;
 - eventi locali di temperatura commerciale e rapporto;
 - discovery tramite GE360 Local Bridge Protocol 2.
 
 ## Deep link
 
-- callback Clienti: `ge360://clienti/jobsite-report?clientId=<uuid>&localClientId=<locale>`
+- callback Clienti da Attrezzi: `ge360://clienti/jobsite-report?clientId=<uuid>&localClientId=<locale>`
+- ritorno Clienti da Preventivi: `ge360://client/<uuid>?estimateId=<estimateId>`
 - Messaggi: `ge360://messaggi/compose?clientId=<uuid>&jobsiteId=<uuid>&name=...`
+- Preventivi: `ge360://estimate/new?clientId=<uuid>&name=...&phone=...&email=...&address=...&source=clienti`
 - Attrezzi: `ge360://attrezzi/open?...`
 
 ## Eventi prodotti
@@ -39,5 +43,6 @@ Gli eventi usano `clientId` e `jobsiteId` universali; `localClientId` può compa
 3. Il trasporto locale firmato usa `com.edilmilan.ge360.permission.INTEGRATION` quando le APK condividono il certificato GE360.
 4. I deep link restano disponibili come handoff esplicito e validato.
 5. Offline-first: l'assenza del cervello centrale non deve bloccare il lavoro locale.
+6. Preventivi deve conservare il `clientId` ricevuto e restituirlo invariato nel callback verso Clienti.
 
 Protocollo locale: GE360 Local Bridge v2.
