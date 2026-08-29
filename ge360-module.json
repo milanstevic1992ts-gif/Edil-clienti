@@ -14,6 +14,7 @@
     "jobsite-context",
     "tools-handoff",
     "message-compose-launch",
+    "estimate-create-launch",
     "local-backup",
     "local-bridge",
     "event-outbox"
@@ -23,12 +24,24 @@
     "relationship.signal.created"
   ],
   "consumes": [
-    "jobsite.tools.report"
+    "jobsite.tools.report",
+    "estimate.crm.linked"
   ],
   "identities": {
     "clientId": "uuid-persistent",
     "jobsiteId": "uuid-persistent",
     "localClientId": "local-only"
+  },
+  "deepLinks": {
+    "publishes": [
+      "ge360://attrezzi/open",
+      "ge360://messaggi/compose",
+      "ge360://estimate/new"
+    ],
+    "consumes": [
+      "ge360://clienti/jobsite-report",
+      "ge360://client/{clientId}"
+    ]
   },
   "localBridge": {
     "protocolVersion": "2",
@@ -36,7 +49,8 @@
     "requiresSameSigningCertificate": true,
     "targets": [
       "com.edilmilanstevic.attrezzi",
-      "com.ge360.messaggi"
+      "com.ge360.messaggi",
+      "com.edilmilanstevic.preventivi"
     ],
     "fallback": "ge360-deep-link"
   },
