@@ -8,6 +8,7 @@
 
     <queries>
         <package android:name="com.edilmilanstevic.attrezzi" />
+        <package android:name="com.ge360.messaggi" />
     </queries>
 
     <application
@@ -22,6 +23,15 @@
             android:name=".AutoBackupJobService"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <receiver
+            android:name=".Ge360LocalBridgeReceiver"
+            android:exported="true"
+            android:permission="com.edilmilan.ge360.permission.INTEGRATION">
+            <intent-filter>
+                <action android:name="com.edilmilan.ge360.local.PING" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name=".Ge360HandoffAckReceiver"
