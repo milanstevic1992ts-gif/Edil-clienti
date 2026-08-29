@@ -34,6 +34,16 @@ public final class Ge360Bridge {
             String eventId = "evt-clienti-handoff-" + client.id + "-" + System.currentTimeMillis();
             String payload = buildPayload(client, jobsiteId, eventId, requestId).toString();
             String callback = "ge360://clienti/jobsite-report?clientId=" + client.id;
+            String encoded = Base64.encodeToString(payload.getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+            Uri uri = Uri.parse("ge360://attrezzi/open").buildUpon()
+                    .appendQueryParameter("payload", encoded)
+                    .appendQueryParameter("jobsiteId", jobsiteId)
+                    .appendQueryParameter("clientId", String.valueOf(client.id))
+                    .appendQueryParameter("callback", callback)
+                    .appendQueryParameter("reportProtocol", "2")
+                    .build();
+            Intent direct = new Intent(Intent.ACTION_VIEW, uri);
+            direct.setPackage(ATTREZZI_PACKAGE);
 
             if (sameSignature(activity, ATTREZZI_PACKAGE)) {
                 Intent handoff = new Intent(ACTION_HANDOFF);
@@ -48,21 +58,13 @@ public final class Ge360Bridge {
                 handoff.putExtra("ge360_request_id", requestId);
                 handoff.putExtra("ge360_idempotency_key", "clienti:" + jobsiteId + ":" + client.updatedAt);
                 handoff.putExtra("ge360_protocol_version", "2");
+                handoff.putExtra("ge360_sender_will_launch", true);
                 activity.sendBroadcast(handoff, PERMISSION);
-                rememberSent(activity, client.id, jobsiteId, "signed-broadcast");
-                return new Result(true, "signed-broadcast", "Cantiere inviato ad Attrezzi");
+                activity.startActivity(direct);
+                rememberSent(activity, client.id, jobsiteId, "signed-broadcast+deep-link");
+                return new Result(true, "signed-broadcast+deep-link", "Attrezzi aperta con il cantiere del cliente");
             }
 
-            String encoded = Base64.encodeToString(payload.getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
-            Uri uri = Uri.parse("ge360://attrezzi/open").buildUpon()
-                    .appendQueryParameter("payload", encoded)
-                    .appendQueryParameter("jobsiteId", jobsiteId)
-                    .appendQueryParameter("clientId", String.valueOf(client.id))
-                    .appendQueryParameter("callback", callback)
-                    .appendQueryParameter("reportProtocol", "2")
-                    .build();
-            Intent direct = new Intent(Intent.ACTION_VIEW, uri);
-            direct.setPackage(ATTREZZI_PACKAGE);
             activity.startActivity(direct);
             rememberSent(activity, client.id, jobsiteId, "deep-link");
             return new Result(true, "deep-link", "Attrezzi aperta con il cantiere del cliente");
