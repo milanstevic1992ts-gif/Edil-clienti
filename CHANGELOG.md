@@ -21,6 +21,7 @@
 - rotazione indipendente degli ultimi 10 backup locali e degli ultimi 10 su Drive;
 - backup locale garantito anche quando Drive è offline o non configurato;
 - comando di backup immediato e ripristino diretto dell’ultima copia locale.
+- workflow GitHub Actions manuale per test e generazione degli APK, con firma protetta opzionale.
 
 ## 1.1.0
 

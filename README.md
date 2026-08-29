@@ -70,7 +70,9 @@ La configurazione di firma non è inclusa intenzionalmente: va impostata localme
 
 ## GitHub Actions
 
-In questa versione non esiste alcun file in `.github/workflows`: nessuna Action viene creata o avviata. La compilazione automatica verrà aggiunta soltanto su richiesta esplicita.
+Il workflow manuale `.github/workflows/build-apk.yml` esegue i test e genera l’APK debug e la release non firmata. Se sono configurati i quattro segreti protetti `SIGNING_KEYSTORE_BASE64`, `SIGNING_KEY_ALIAS`, `SIGNING_STORE_PASSWORD` e `SIGNING_KEY_PASSWORD`, genera anche la release firmata.
+
+La Action si avvia esclusivamente dal pulsante **Run workflow**: non parte automaticamente a ogni modifica e quindi non consuma minuti senza un comando esplicito.
 
 ## Struttura
 
