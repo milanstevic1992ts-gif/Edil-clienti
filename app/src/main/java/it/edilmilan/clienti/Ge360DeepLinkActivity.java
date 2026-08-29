@@ -26,14 +26,24 @@ public class Ge360DeepLinkActivity extends Activity {
 
     private void handle(Intent intent) {
         Uri uri = intent == null ? null : intent.getData();
-        if (uri == null || !"ge360".equalsIgnoreCase(uri.getScheme()) || !"clienti".equalsIgnoreCase(uri.getHost())) {
+        if (uri == null || !"ge360".equalsIgnoreCase(uri.getScheme())) {
             openMain();
             return;
         }
 
+        String host = safe(uri.getHost());
+        if ("client".equalsIgnoreCase(host)) {
+            handlePreventiviReturn(uri);
+            return;
+        }
+        if (!"clienti".equalsIgnoreCase(host)) {
+            openMain();
+            return;
+        }
+
+        ClientDbHelper db = new ClientDbHelper(this);
         long localClientId = parseLong(uri.getQueryParameter("localClientId"));
         String universalClientId = safe(uri.getQueryParameter("clientId"));
-        ClientDbHelper db = new ClientDbHelper(this);
         Client client = localClientId > 0 ? db.get(localClientId) : db.getByGe360Id(universalClientId);
         if (client == null) {
             openMain();
@@ -41,6 +51,28 @@ public class Ge360DeepLinkActivity extends Activity {
         }
 
         if ("/jobsite-report".equals(uri.getPath())) receiveJobsiteReport(client.id, uri);
+        openClient(client.id);
+    }
+
+    private void handlePreventiviReturn(Uri uri) {
+        String universalClientId = uri.getPathSegments().isEmpty() ? "" : safe(uri.getPathSegments().get(0));
+        if (universalClientId.isEmpty()) {
+            openMain();
+            return;
+        }
+        Client client = new ClientDbHelper(this).getByGe360Id(universalClientId);
+        if (client == null) {
+            openMain();
+            return;
+        }
+        String estimateId = safe(uri.getQueryParameter("estimateId"));
+        if (!estimateId.isEmpty()) {
+            getSharedPreferences("ge360_bridge", MODE_PRIVATE).edit()
+                    .putString("client_" + client.id + "_last_estimate_id", estimateId)
+                    .putLong("client_" + client.id + "_last_estimate_at", System.currentTimeMillis())
+                    .apply();
+            Toast.makeText(this, "Preventivo collegato al cliente", Toast.LENGTH_SHORT).show();
+        }
         openClient(client.id);
     }
 
