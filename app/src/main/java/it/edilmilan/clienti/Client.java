@@ -2,6 +2,8 @@ package it.edilmilan.clienti;
 
 public class Client {
     public long id;
+    public String ge360Id = "";
+    public String ge360JobsiteId = "";
     public String firstName = "";
     public String lastName = "";
     public String phone = "";
