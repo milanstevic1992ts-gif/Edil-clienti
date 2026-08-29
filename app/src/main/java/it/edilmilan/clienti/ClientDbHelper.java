@@ -11,19 +11,28 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 
 public class ClientDbHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "edil_clienti.db";
-    private static final int DB_VERSION = 3;
+    private static final int DB_VERSION = 4;
     private static final String TABLE = "clients";
     private static final String INTERACTIONS = "relationship_interactions";
     private static final String OUTBOX = "outbox_events";
+    private static final String OUTBOX_PENDING = "PENDING";
+    private static final String OUTBOX_ACKED = "ACKED";
+    private static final String OUTBOX_DEAD_LETTER = "DEAD_LETTER";
+    private static final int MAX_OUTBOX_ATTEMPTS = 8;
+    private static final long BASE_RETRY_MS = 500L;
+    private static final long MAX_RETRY_MS = 60_000L;
 
     public ClientDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -78,6 +87,9 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             fillMissingGe360Identities(db);
             createIdentityIndexes(db);
         }
+        if (oldVersion < 4) {
+            upgradeOutboxToEnvelopeV2(db);
+        }
     }
 
     private void createIdentityIndexes(SQLiteDatabase db) {
@@ -117,11 +129,84 @@ public class ClientDbHelper extends SQLiteOpenHelper {
     private void createOutboxTable(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS " + OUTBOX + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "event_id TEXT NOT NULL DEFAULT ''," +
                 "event_type TEXT NOT NULL," +
+                "idempotency_key TEXT NOT NULL DEFAULT ''," +
                 "payload TEXT NOT NULL," +
-                "status TEXT NOT NULL DEFAULT 'pending'," +
-                "created_at INTEGER NOT NULL)");
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_outbox_status ON " + OUTBOX + "(status, created_at)");
+                "envelope TEXT NOT NULL DEFAULT ''," +
+                "status TEXT NOT NULL DEFAULT 'PENDING'," +
+                "attempt_count INTEGER NOT NULL DEFAULT 0," +
+                "next_attempt_at INTEGER NOT NULL DEFAULT 0," +
+                "last_error TEXT NOT NULL DEFAULT ''," +
+                "created_at INTEGER NOT NULL," +
+                "updated_at INTEGER NOT NULL DEFAULT 0)");
+        createOutboxIndexes(db);
+    }
+
+    private void createOutboxIndexes(SQLiteDatabase db) {
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_outbox_ready ON " + OUTBOX + "(status, next_attempt_at, created_at)");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_outbox_event_id ON " + OUTBOX + "(event_id) WHERE event_id <> ''");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_outbox_idempotency ON " + OUTBOX + "(idempotency_key) WHERE idempotency_key <> ''");
+    }
+
+    private void upgradeOutboxToEnvelopeV2(SQLiteDatabase db) {
+        createOutboxTable(db);
+        if (!hasColumn(db, OUTBOX, "event_id")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN event_id TEXT NOT NULL DEFAULT ''");
+        if (!hasColumn(db, OUTBOX, "idempotency_key")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN idempotency_key TEXT NOT NULL DEFAULT ''");
+        if (!hasColumn(db, OUTBOX, "envelope")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN envelope TEXT NOT NULL DEFAULT ''");
+        if (!hasColumn(db, OUTBOX, "attempt_count")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0");
+        if (!hasColumn(db, OUTBOX, "next_attempt_at")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN next_attempt_at INTEGER NOT NULL DEFAULT 0");
+        if (!hasColumn(db, OUTBOX, "last_error")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN last_error TEXT NOT NULL DEFAULT ''");
+        if (!hasColumn(db, OUTBOX, "updated_at")) db.execSQL("ALTER TABLE " + OUTBOX + " ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
+
+        try (Cursor cursor = db.query(OUTBOX,
+                new String[]{"id", "event_type", "payload", "status", "created_at", "event_id", "idempotency_key", "envelope"},
+                null, null, null, null, "created_at ASC")) {
+            while (cursor.moveToNext()) {
+                long rowId = cursor.getLong(0);
+                String eventType = cursor.getString(1);
+                String payload = cursor.getString(2);
+                String status = cursor.getString(3);
+                long createdAt = cursor.getLong(4);
+                String eventId = cursor.getString(5);
+                String idempotencyKey = cursor.getString(6);
+                String envelope = cursor.getString(7);
+                try {
+                    JSONObject payloadJson = new JSONObject(payload);
+                    if (Client.safe(eventId).isEmpty()) eventId = UUID.randomUUID().toString();
+                    if (Client.safe(idempotencyKey).isEmpty()) {
+                        idempotencyKey = legacyIdempotencyKey(eventType, payloadJson, createdAt, rowId);
+                    }
+                    if (Client.safe(envelope).isEmpty()) {
+                        envelope = buildEnvelope(eventType, payloadJson, createdAt, eventId, idempotencyKey).toString();
+                    }
+                    ContentValues values = new ContentValues();
+                    values.put("event_id", eventId);
+                    values.put("idempotency_key", idempotencyKey);
+                    values.put("envelope", envelope);
+                    values.put("status", normalizeOutboxStatus(status));
+                    values.put("updated_at", createdAt);
+                    db.update(OUTBOX, values, "id=?", new String[]{String.valueOf(rowId)});
+                } catch (Exception ignored) {
+                    ContentValues values = new ContentValues();
+                    values.put("status", OUTBOX_DEAD_LETTER);
+                    values.put("last_error", "Legacy event non convertibile");
+                    values.put("updated_at", createdAt);
+                    db.update(OUTBOX, values, "id=?", new String[]{String.valueOf(rowId)});
+                }
+            }
+        }
+        createOutboxIndexes(db);
+    }
+
+    private boolean hasColumn(SQLiteDatabase db, String table, String column) {
+        try (Cursor cursor = db.rawQuery("PRAGMA table_info(" + table + ")", null)) {
+            int nameIndex = cursor.getColumnIndex("name");
+            while (cursor.moveToNext()) {
+                if (column.equals(cursor.getString(nameIndex))) return true;
+            }
+        }
+        return false;
     }
 
     public long save(Client client) {
@@ -211,7 +296,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             payload.put("jobsiteId", current.ge360JobsiteId);
             payload.put("temperature", Client.safe(temperature));
             payload.put("createdAt", now);
-            enqueueOutbox(db, "client.temperature.changed", payload.toString(), now);
+            enqueueOutbox(db, "client.temperature.changed", payload, now);
             db.setTransactionSuccessful();
         } catch (JSONException e) {
             throw new IllegalStateException(e);
@@ -247,7 +332,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             payload.put("delta", newPulse - client.pulse);
             payload.put("pulseAfter", newPulse);
             payload.put("createdAt", now);
-            enqueueOutbox(db, "relationship.signal.created", payload.toString(), now);
+            enqueueOutbox(db, "relationship.signal.created", payload, now);
             ContentValues update = new ContentValues();
             update.put("pulse", newPulse);
             update.put("last_interaction_at", now);
@@ -289,6 +374,51 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             while (cursor.moveToNext()) rows.add(interactionFromCursor(cursor));
         }
         return rows;
+    }
+
+    public List<String> getReadyOutboxEnvelopes(int limit) {
+        List<String> rows = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        try (Cursor cursor = getReadableDatabase().query(OUTBOX, new String[]{"envelope"},
+                "status=? AND next_attempt_at<=?", new String[]{OUTBOX_PENDING, String.valueOf(now)},
+                null, null, "created_at ASC", String.valueOf(Math.max(1, Math.min(limit, 100))))) {
+            while (cursor.moveToNext()) rows.add(cursor.getString(0));
+        }
+        return rows;
+    }
+
+    public void markOutboxAcked(String eventId) {
+        ContentValues values = new ContentValues();
+        values.put("status", OUTBOX_ACKED);
+        values.put("last_error", "");
+        values.put("updated_at", System.currentTimeMillis());
+        getWritableDatabase().update(OUTBOX, values, "event_id=?", new String[]{Client.safe(eventId)});
+    }
+
+    public void markOutboxFailed(String eventId, String error) {
+        SQLiteDatabase db = getWritableDatabase();
+        int attempts = 0;
+        try (Cursor cursor = db.query(OUTBOX, new String[]{"attempt_count"}, "event_id=?",
+                new String[]{Client.safe(eventId)}, null, null, null, "1")) {
+            if (cursor.moveToFirst()) attempts = cursor.getInt(0);
+        }
+        int nextAttempts = attempts + 1;
+        long now = System.currentTimeMillis();
+        boolean exhausted = nextAttempts >= MAX_OUTBOX_ATTEMPTS;
+        ContentValues values = new ContentValues();
+        values.put("attempt_count", nextAttempts);
+        values.put("status", exhausted ? OUTBOX_DEAD_LETTER : OUTBOX_PENDING);
+        values.put("next_attempt_at", exhausted ? 0 : now + retryDelayMs(nextAttempts));
+        values.put("last_error", truncate(error, 500));
+        values.put("updated_at", now);
+        db.update(OUTBOX, values, "event_id=?", new String[]{Client.safe(eventId)});
+    }
+
+    public int getOutboxCount(String status) {
+        try (Cursor cursor = getReadableDatabase().rawQuery(
+                "SELECT COUNT(*) FROM " + OUTBOX + " WHERE status=?", new String[]{normalizeOutboxStatus(status)})) {
+            return cursor.moveToFirst() ? cursor.getInt(0) : 0;
+        }
     }
 
     public String exportJson() throws JSONException {
@@ -494,12 +624,76 @@ public class ClientDbHelper extends SQLiteOpenHelper {
         db.insert(INTERACTIONS, null, values);
     }
 
-    private void enqueueOutbox(SQLiteDatabase db, String eventType, String payload, long createdAt) {
+    private void enqueueOutbox(SQLiteDatabase db, String eventType, JSONObject payload, long createdAt) throws JSONException {
+        String eventId = UUID.randomUUID().toString();
+        String idempotencyKey = eventType + ":" + payload.optString("clientId", "unknown") + ":" + createdAt;
+        JSONObject envelope = buildEnvelope(eventType, payload, createdAt, eventId, idempotencyKey);
+
         ContentValues event = new ContentValues();
+        event.put("event_id", eventId);
         event.put("event_type", eventType);
-        event.put("payload", payload);
-        event.put("status", "pending");
+        event.put("idempotency_key", idempotencyKey);
+        event.put("payload", payload.toString());
+        event.put("envelope", envelope.toString());
+        event.put("status", OUTBOX_PENDING);
+        event.put("attempt_count", 0);
+        event.put("next_attempt_at", 0);
+        event.put("last_error", "");
         event.put("created_at", createdAt);
-        db.insertOrThrow(OUTBOX, null, event);
+        event.put("updated_at", createdAt);
+        db.insertWithOnConflict(OUTBOX, null, event, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+    private JSONObject buildEnvelope(String eventType, JSONObject payload, long createdAt,
+                                     String eventId, String idempotencyKey) throws JSONException {
+        String clientId = payload.optString("clientId", "").trim();
+        String localClientId = payload.optString("localClientId", "").trim();
+        String entityId = clientId.isEmpty() ? "local-client-" + (localClientId.isEmpty() ? eventId : localClientId) : clientId;
+        String jobsiteId = payload.optString("jobsiteId", "").trim();
+
+        JSONObject envelope = new JSONObject();
+        envelope.put("schemaVersion", "2");
+        envelope.put("eventId", eventId);
+        envelope.put("eventType", eventType);
+        envelope.put("source", "clienti");
+        envelope.put("occurredAt", isoUtc(createdAt));
+        envelope.put("correlationId", entityId);
+        envelope.put("idempotencyKey", idempotencyKey);
+        envelope.put("entity", new JSONObject().put("type", "client").put("id", entityId));
+        if (!jobsiteId.isEmpty()) envelope.put("jobsite", new JSONObject().put("id", jobsiteId));
+        envelope.put("payload", payload);
+        envelope.put("meta", new JSONObject()
+                .put("appVersion", "1.2.0")
+                .put("offlineCreated", true));
+        return envelope;
+    }
+
+    private String legacyIdempotencyKey(String eventType, JSONObject payload, long createdAt, long rowId) {
+        String clientId = payload.optString("clientId", payload.optString("localClientId", "unknown"));
+        return eventType + ":" + clientId + ":" + createdAt + ":legacy:" + rowId;
+    }
+
+    private String normalizeOutboxStatus(String value) {
+        String normalized = Client.safe(value).toUpperCase(Locale.ROOT);
+        if (OUTBOX_ACKED.equals(normalized)) return OUTBOX_ACKED;
+        if (OUTBOX_DEAD_LETTER.equals(normalized)) return OUTBOX_DEAD_LETTER;
+        return OUTBOX_PENDING;
+    }
+
+    private long retryDelayMs(int attempt) {
+        int exponent = Math.max(0, Math.min(attempt - 1, 7));
+        long raw = BASE_RETRY_MS * (1L << exponent);
+        return Math.min(raw, MAX_RETRY_MS);
+    }
+
+    private String isoUtc(long millis) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return format.format(new Date(millis));
+    }
+
+    private String truncate(String value, int max) {
+        String safe = value == null ? "" : value;
+        return safe.length() <= max ? safe : safe.substring(0, max);
     }
 }
