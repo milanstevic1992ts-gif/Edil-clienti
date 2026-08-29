@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "module": "clienti",
+  "displayName": "EDIL Clienti",
+  "appVersion": "1.2.0",
+  "role": "customer-source-of-truth",
+  "protocolVersion": "2",
+  "offlineFirst": true,
+  "packageId": "it.edilmilan.clienti",
+  "capabilities": [
+    "client-source",
+    "relationship-tracking",
+    "customer-context",
+    "jobsite-context",
+    "tools-handoff",
+    "message-compose-launch",
+    "local-backup",
+    "local-bridge",
+    "event-outbox"
+  ],
+  "publishes": [
+    "client.temperature.changed",
+    "relationship.signal.created"
+  ],
+  "consumes": [
+    "jobsite.tools.report"
+  ],
+  "identities": {
+    "clientId": "uuid-persistent",
+    "jobsiteId": "uuid-persistent",
+    "localClientId": "local-only"
+  },
+  "localBridge": {
+    "protocolVersion": "2",
+    "permission": "com.edilmilan.ge360.permission.INTEGRATION",
+    "requiresSameSigningCertificate": true,
+    "targets": [
+      "com.edilmilanstevic.attrezzi",
+      "com.ge360.messaggi"
+    ],
+    "fallback": "ge360-deep-link"
+  },
+  "bridgeManager": {
+    "discoverable": true,
+    "discovery": ["PING", "PONG"]
+  }
+}
