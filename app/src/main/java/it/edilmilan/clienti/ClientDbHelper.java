@@ -16,10 +16,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class ClientDbHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "edil_clienti.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
     private static final String TABLE = "clients";
     private static final String INTERACTIONS = "relationship_interactions";
     private static final String OUTBOX = "outbox_events";
@@ -32,6 +33,8 @@ public class ClientDbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE " + TABLE + " (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "ge360_id TEXT NOT NULL DEFAULT ''," +
+                "ge360_jobsite_id TEXT NOT NULL DEFAULT ''," +
                 "first_name TEXT NOT NULL DEFAULT ''," +
                 "last_name TEXT NOT NULL DEFAULT ''," +
                 "phone TEXT NOT NULL DEFAULT ''," +
@@ -51,6 +54,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX idx_clients_name ON " + TABLE + "(last_name, first_name)");
         db.execSQL("CREATE INDEX idx_clients_phone ON " + TABLE + "(phone)");
         db.execSQL("CREATE INDEX idx_clients_email ON " + TABLE + "(email)");
+        createIdentityIndexes(db);
         createInteractionsTable(db);
         createOutboxTable(db);
     }
@@ -67,6 +71,33 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + TABLE + " ADD COLUMN last_interaction_at INTEGER NOT NULL DEFAULT 0");
             createInteractionsTable(db);
             createOutboxTable(db);
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE " + TABLE + " ADD COLUMN ge360_id TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE " + TABLE + " ADD COLUMN ge360_jobsite_id TEXT NOT NULL DEFAULT ''");
+            fillMissingGe360Identities(db);
+            createIdentityIndexes(db);
+        }
+    }
+
+    private void createIdentityIndexes(SQLiteDatabase db) {
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_ge360_id ON " + TABLE + "(ge360_id) WHERE ge360_id <> ''");
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_ge360_jobsite ON " + TABLE + "(ge360_jobsite_id) WHERE ge360_jobsite_id <> ''");
+    }
+
+    private void fillMissingGe360Identities(SQLiteDatabase db) {
+        try (Cursor cursor = db.query(TABLE, new String[]{"id", "ge360_id", "ge360_jobsite_id"}, null, null, null, null, null)) {
+            while (cursor.moveToNext()) {
+                long id = cursor.getLong(0);
+                String ge360Id = cursor.getString(1);
+                String jobsiteId = cursor.getString(2);
+                if (Client.safe(ge360Id).isEmpty() || Client.safe(jobsiteId).isEmpty()) {
+                    ContentValues values = new ContentValues();
+                    if (Client.safe(ge360Id).isEmpty()) values.put("ge360_id", UUID.randomUUID().toString());
+                    if (Client.safe(jobsiteId).isEmpty()) values.put("ge360_jobsite_id", UUID.randomUUID().toString());
+                    db.update(TABLE, values, "id=?", new String[]{String.valueOf(id)});
+                }
+            }
         }
     }
 
@@ -95,21 +126,38 @@ public class ClientDbHelper extends SQLiteOpenHelper {
 
     public long save(Client client) {
         SQLiteDatabase db = getWritableDatabase();
+        ensureIdentity(client);
         long now = System.currentTimeMillis();
         ContentValues values = toValues(client);
         values.put("updated_at", now);
+        client.updatedAt = now;
         if (client.id > 0) {
             db.update(TABLE, values, "id=?", new String[]{String.valueOf(client.id)});
             return client.id;
         }
         values.put("created_at", now);
+        client.createdAt = now;
         client.id = db.insertOrThrow(TABLE, null, values);
         return client.id;
+    }
+
+    private void ensureIdentity(Client client) {
+        if (Client.safe(client.ge360Id).isEmpty()) client.ge360Id = UUID.randomUUID().toString();
+        if (Client.safe(client.ge360JobsiteId).isEmpty()) client.ge360JobsiteId = UUID.randomUUID().toString();
     }
 
     public Client get(long id) {
         try (Cursor cursor = getReadableDatabase().query(TABLE, null, "id=?",
                 new String[]{String.valueOf(id)}, null, null, null)) {
+            return cursor.moveToFirst() ? fromCursor(cursor) : null;
+        }
+    }
+
+    public Client getByGe360Id(String ge360Id) {
+        String value = Client.safe(ge360Id);
+        if (value.isEmpty()) return null;
+        try (Cursor cursor = getReadableDatabase().query(TABLE, null, "ge360_id=?",
+                new String[]{value}, null, null, null, "1")) {
             return cursor.moveToFirst() ? fromCursor(cursor) : null;
         }
     }
@@ -158,7 +206,9 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             values.put("updated_at", now);
             db.update(TABLE, values, "id=?", new String[]{String.valueOf(clientId)});
             JSONObject payload = new JSONObject();
-            payload.put("clientId", clientId);
+            payload.put("clientId", current.ge360Id);
+            payload.put("localClientId", clientId);
+            payload.put("jobsiteId", current.ge360JobsiteId);
             payload.put("temperature", Client.safe(temperature));
             payload.put("createdAt", now);
             enqueueOutbox(db, "client.temperature.changed", payload.toString(), now);
@@ -188,7 +238,9 @@ public class ClientDbHelper extends SQLiteOpenHelper {
             values.put("created_at", now);
             db.insertOrThrow(INTERACTIONS, null, values);
             JSONObject payload = new JSONObject();
-            payload.put("clientId", clientId);
+            payload.put("clientId", client.ge360Id);
+            payload.put("localClientId", clientId);
+            payload.put("jobsiteId", client.ge360JobsiteId);
             payload.put("signal", Client.safe(signal));
             payload.put("reason", Client.safe(reason));
             payload.put("detail", Client.safe(detail));
@@ -242,7 +294,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
     public String exportJson() throws JSONException {
         JSONObject root = new JSONObject();
         root.put("app", "EDIL Clienti");
-        root.put("formatVersion", 2);
+        root.put("formatVersion", 3);
         root.put("exportedAt", System.currentTimeMillis());
         JSONArray rows = new JSONArray();
         for (Client client : search("")) rows.put(toJson(client));
@@ -272,7 +324,11 @@ public class ClientDbHelper extends SQLiteOpenHelper {
                 JSONObject source = rows.getJSONObject(i);
                 Client incoming = fromJson(source);
                 Client duplicate = findDuplicate(incoming.phone, incoming.email);
-                if (duplicate != null) incoming.id = duplicate.id;
+                if (duplicate != null) {
+                    incoming.id = duplicate.id;
+                    if (!Client.safe(duplicate.ge360Id).isEmpty()) incoming.ge360Id = duplicate.ge360Id;
+                    if (!Client.safe(duplicate.ge360JobsiteId).isEmpty()) incoming.ge360JobsiteId = duplicate.ge360JobsiteId;
+                }
                 long newId = save(incoming);
                 idMap.put(source.optLong("backupId", 0), newId);
                 imported++;
@@ -301,6 +357,8 @@ public class ClientDbHelper extends SQLiteOpenHelper {
 
     private ContentValues toValues(Client c) {
         ContentValues values = new ContentValues();
+        values.put("ge360_id", Client.safe(c.ge360Id));
+        values.put("ge360_jobsite_id", Client.safe(c.ge360JobsiteId));
         values.put("first_name", Client.safe(c.firstName));
         values.put("last_name", Client.safe(c.lastName));
         values.put("phone", Client.safe(c.phone));
@@ -322,6 +380,8 @@ public class ClientDbHelper extends SQLiteOpenHelper {
     private Client fromCursor(Cursor cursor) {
         Client c = new Client();
         c.id = cursor.getLong(cursor.getColumnIndexOrThrow("id"));
+        c.ge360Id = cursor.getString(cursor.getColumnIndexOrThrow("ge360_id"));
+        c.ge360JobsiteId = cursor.getString(cursor.getColumnIndexOrThrow("ge360_jobsite_id"));
         c.firstName = cursor.getString(cursor.getColumnIndexOrThrow("first_name"));
         c.lastName = cursor.getString(cursor.getColumnIndexOrThrow("last_name"));
         c.phone = cursor.getString(cursor.getColumnIndexOrThrow("phone"));
@@ -344,6 +404,8 @@ public class ClientDbHelper extends SQLiteOpenHelper {
     private JSONObject toJson(Client c) throws JSONException {
         JSONObject item = new JSONObject();
         item.put("backupId", c.id);
+        item.put("ge360Id", c.ge360Id);
+        item.put("ge360JobsiteId", c.ge360JobsiteId);
         item.put("firstName", c.firstName);
         item.put("lastName", c.lastName);
         item.put("phone", c.phone);
@@ -365,6 +427,8 @@ public class ClientDbHelper extends SQLiteOpenHelper {
 
     private Client fromJson(JSONObject item) {
         Client c = new Client();
+        c.ge360Id = item.optString("ge360Id", "");
+        c.ge360JobsiteId = item.optString("ge360JobsiteId", "");
         c.firstName = item.optString("firstName", "");
         c.lastName = item.optString("lastName", "");
         c.phone = item.optString("phone", "");
@@ -381,6 +445,7 @@ public class ClientDbHelper extends SQLiteOpenHelper {
         c.lastInteractionAt = item.optLong("lastInteractionAt", 0);
         c.createdAt = item.optLong("createdAt", System.currentTimeMillis());
         c.updatedAt = item.optLong("updatedAt", System.currentTimeMillis());
+        ensureIdentity(c);
         return c;
     }
 
