@@ -25,49 +25,51 @@ public final class Ge360Bridge {
     private Ge360Bridge() { }
 
     public static Result openInAttrezzi(Activity activity, Client client) {
-        if (activity == null || client == null || client.id <= 0) {
-            return new Result(false, "none", "Cliente non valido");
+        if (activity == null || client == null || client.id <= 0 || Client.safe(client.ge360Id).isEmpty() || Client.safe(client.ge360JobsiteId).isEmpty()) {
+            return new Result(false, "none", "Identità GE360 del cliente non disponibile");
         }
         try {
-            String jobsiteId = jobsiteId(client.id);
+            String jobsiteId = client.ge360JobsiteId;
+            String universalClientId = client.ge360Id;
             String requestId = UUID.randomUUID().toString();
-            String eventId = "evt-clienti-handoff-" + client.id + "-" + System.currentTimeMillis();
+            String eventId = "evt-clienti-handoff-" + universalClientId + "-" + System.currentTimeMillis();
             String payload = buildPayload(client, jobsiteId, eventId, requestId).toString();
-            String callback = "ge360://clienti/jobsite-report?clientId=" + client.id;
+            String callback = Uri.parse("ge360://clienti/jobsite-report").buildUpon()
+                    .appendQueryParameter("clientId", universalClientId)
+                    .appendQueryParameter("localClientId", String.valueOf(client.id))
+                    .build().toString();
             String encoded = Base64.encodeToString(payload.getBytes(StandardCharsets.UTF_8), Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
             Uri uri = Uri.parse("ge360://attrezzi/open").buildUpon()
                     .appendQueryParameter("payload", encoded)
                     .appendQueryParameter("jobsiteId", jobsiteId)
-                    .appendQueryParameter("clientId", String.valueOf(client.id))
+                    .appendQueryParameter("clientId", universalClientId)
                     .appendQueryParameter("callback", callback)
                     .appendQueryParameter("reportProtocol", "2")
                     .build();
             Intent direct = new Intent(Intent.ACTION_VIEW, uri);
             direct.setPackage(ATTREZZI_PACKAGE);
 
-            if (sameSignature(activity, ATTREZZI_PACKAGE)) {
+            boolean signed = sameSignature(activity, ATTREZZI_PACKAGE);
+            if (signed) {
                 Intent handoff = new Intent(ACTION_HANDOFF);
                 handoff.setPackage(ATTREZZI_PACKAGE);
                 handoff.putExtra("ge360_payload_json", payload);
                 handoff.putExtra("ge360_jobsite_id", jobsiteId);
                 handoff.putExtra("ge360_estimate_id", "");
-                handoff.putExtra("ge360_client_id", String.valueOf(client.id));
+                handoff.putExtra("ge360_client_id", universalClientId);
                 handoff.putExtra("ge360_callback_uri", callback);
                 handoff.putExtra("ge360_callback_package", activity.getPackageName());
                 handoff.putExtra("ge360_event_id", eventId);
                 handoff.putExtra("ge360_request_id", requestId);
-                handoff.putExtra("ge360_idempotency_key", "clienti:" + jobsiteId + ":" + client.updatedAt);
+                handoff.putExtra("ge360_idempotency_key", "clienti:" + universalClientId + ":" + client.updatedAt);
                 handoff.putExtra("ge360_protocol_version", "2");
                 handoff.putExtra("ge360_sender_will_launch", true);
                 activity.sendBroadcast(handoff, PERMISSION);
-                activity.startActivity(direct);
-                rememberSent(activity, client.id, jobsiteId, "signed-broadcast+deep-link");
-                return new Result(true, "signed-broadcast+deep-link", "Attrezzi aperta con il cantiere del cliente");
             }
 
             activity.startActivity(direct);
-            rememberSent(activity, client.id, jobsiteId, "deep-link");
-            return new Result(true, "deep-link", "Attrezzi aperta con il cantiere del cliente");
+            rememberSent(activity, client.id, universalClientId, jobsiteId, signed ? "signed-broadcast+deep-link" : "deep-link");
+            return new Result(true, signed ? "signed-broadcast+deep-link" : "deep-link", "Attrezzi aperta con il cantiere del cliente");
         } catch (Exception error) {
             return new Result(false, "none", "Attrezzi non disponibile: " + safeMessage(error));
         }
@@ -91,7 +93,9 @@ public final class Ge360Bridge {
     }
 
     static void rememberAck(Context context, String jobsiteId) {
-        long clientId = clientIdFromJobsite(jobsiteId);
+        long clientId = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getLong("jobsite_" + safeKey(jobsiteId) + "_local_client_id", 0);
+        if (clientId <= 0) clientId = legacyClientIdFromJobsite(jobsiteId);
         if (clientId <= 0) return;
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
                 .putLong("client_" + clientId + "_last_ack_at", System.currentTimeMillis())
@@ -127,17 +131,19 @@ public final class Ge360Bridge {
         JSONObject source = new JSONObject();
         source.put("app", "clienti");
         source.put("module", "crm");
-        source.put("clientId", String.valueOf(client.id));
+        source.put("clientId", client.ge360Id);
+        source.put("localClientId", client.id);
         root.put("source", source);
 
         JSONObject site = new JSONObject();
-        site.put("title", client.fullName().isEmpty() ? "Cliente " + client.id : client.fullName());
+        site.put("id", jobsiteId);
+        site.put("title", client.fullName().isEmpty() ? "Cliente" : client.fullName());
         site.put("address", Client.safe(client.address));
         site.put("city", "");
         root.put("site", site);
 
         JSONObject customer = new JSONObject();
-        customer.put("id", String.valueOf(client.id));
+        customer.put("id", client.ge360Id);
         customer.put("name", client.fullName());
         customer.put("phone", Client.safe(client.phone));
         customer.put("email", Client.safe(client.email));
@@ -166,25 +172,27 @@ public final class Ge360Bridge {
         }
     }
 
-    private static void rememberSent(Context context, long clientId, String jobsiteId, String transport) {
+    private static void rememberSent(Context context, long localClientId, String universalClientId, String jobsiteId, String transport) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putLong("client_" + clientId + "_last_sent_at", System.currentTimeMillis())
-                .putString("client_" + clientId + "_jobsite_id", jobsiteId)
-                .putString("client_" + clientId + "_transport", transport)
+                .putLong("client_" + localClientId + "_last_sent_at", System.currentTimeMillis())
+                .putString("client_" + localClientId + "_ge360_id", universalClientId)
+                .putString("client_" + localClientId + "_jobsite_id", jobsiteId)
+                .putString("client_" + localClientId + "_transport", transport)
+                .putLong("jobsite_" + safeKey(jobsiteId) + "_local_client_id", localClientId)
                 .apply();
     }
 
-    private static String jobsiteId(long clientId) {
-        return "clienti-" + clientId + "-main";
-    }
-
-    private static long clientIdFromJobsite(String jobsiteId) {
+    private static long legacyClientIdFromJobsite(String jobsiteId) {
         if (jobsiteId == null || !jobsiteId.startsWith("clienti-") || !jobsiteId.endsWith("-main")) return 0;
         try {
             return Long.parseLong(jobsiteId.substring("clienti-".length(), jobsiteId.length() - "-main".length()));
         } catch (Exception ignored) {
             return 0;
         }
+    }
+
+    private static String safeKey(String value) {
+        return value == null ? "" : value.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 
     private static String formatTime(long value) {
