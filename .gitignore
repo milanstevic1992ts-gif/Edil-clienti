@@ -9,5 +9,6 @@
 .externalNativeBuild/
 .cxx/
 *.jks
+app/ge360-release.jks
 *.keystore
 keystore.properties
