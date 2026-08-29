@@ -3,13 +3,10 @@ package it.edilmilan.clienti;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -21,31 +18,38 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends Activity implements ClientAdapter.Listener {
     private static final int REQUEST_EDIT = 10;
-    private static final int REQUEST_PICK_CONTACT = 20;
+    private static final int REQUEST_IMPORT_CONTACTS = 20;
     private static final int REQUEST_CONTACT_PERMISSION = 21;
     private static final int REQUEST_BACKUP = 30;
     private static final int REQUEST_RESTORE = 31;
+    private static final int REQUEST_DRIVE_FOLDER = 32;
 
     private ClientDbHelper db;
     private ClientAdapter adapter;
     private EditText searchInput;
     private TextView countLabel;
+    private String activeFilter = "Tutti";
+    private final int[] filterButtonIds = {R.id.filterAll, R.id.filterHot, R.id.filterGrow, R.id.filterFollowUp, R.id.filterRisk};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         db = new ClientDbHelper(this);
+        AutoBackupJobService.schedule(this);
 
         searchInput = findViewById(R.id.searchInput);
         countLabel = findViewById(R.id.countLabel);
@@ -58,6 +62,12 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
         findViewById(R.id.addButton).setOnClickListener(v -> openEditor(null, null));
         findViewById(R.id.importButton).setOnClickListener(v -> startContactImport());
         findViewById(R.id.menuButton).setOnClickListener(this::showDataMenu);
+        findViewById(R.id.filterAll).setOnClickListener(v -> setFilter("Tutti", R.id.filterAll));
+        findViewById(R.id.filterHot).setOnClickListener(v -> setFilter("Caldi", R.id.filterHot));
+        findViewById(R.id.filterGrow).setOnClickListener(v -> setFilter("Da coltivare", R.id.filterGrow));
+        findViewById(R.id.filterFollowUp).setOnClickListener(v -> setFilter("Follow-up", R.id.filterFollowUp));
+        findViewById(R.id.filterRisk).setOnClickListener(v -> setFilter("Polso basso", R.id.filterRisk));
+        updateFilterAppearance(R.id.filterAll);
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
@@ -71,9 +81,15 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
         PopupMenu popup = new PopupMenu(this, anchor);
         popup.getMenu().add(0, 1, 0, "Crea backup");
         popup.getMenu().add(0, 2, 1, "Ripristina backup");
+        popup.getMenu().add(0, 3, 2, "Configura cartella Google Drive");
+        popup.getMenu().add(0, 4, 3, "Esegui backup automatico ora");
+        popup.getMenu().add(0, 5, 4, "Ripristina ultimo backup locale");
         popup.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == 1) createBackup();
             else if (item.getItemId() == 2) chooseBackup();
+            else if (item.getItemId() == 3) chooseDriveFolder();
+            else if (item.getItemId() == 4) runAutomaticBackupNow();
+            else if (item.getItemId() == 5) askRestoreLatestLocal();
             return true;
         });
         popup.show();
@@ -85,9 +101,34 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
     }
 
     private void loadClients() {
-        List<Client> clients = db.search(searchInput == null ? "" : searchInput.getText().toString());
+        List<Client> source = db.search(searchInput == null ? "" : searchInput.getText().toString());
+        List<Client> clients = new ArrayList<>();
+        for (Client client : source) {
+            if (matchesActiveFilter(client)) clients.add(client);
+        }
         adapter.setClients(clients);
-        countLabel.setText(clients.size() + (clients.size() == 1 ? " cliente" : " clienti"));
+        String filterLabel = activeFilter.equals("Tutti") ? "" : " · " + activeFilter;
+        countLabel.setText(clients.size() + (clients.size() == 1 ? " cliente" : " clienti") + filterLabel);
+    }
+
+    private void setFilter(String filter, int selectedButtonId) {
+        activeFilter = filter;
+        updateFilterAppearance(selectedButtonId);
+        loadClients();
+    }
+
+    private void updateFilterAppearance(int selectedButtonId) {
+        for (int id : filterButtonIds) findViewById(id).setAlpha(id == selectedButtonId ? 1f : 0.55f);
+    }
+
+    private boolean matchesActiveFilter(Client client) {
+        switch (activeFilter) {
+            case "Caldi": return "Caldo".equals(client.temperature);
+            case "Da coltivare": return "Da coltivare".equals(client.temperature);
+            case "Follow-up": return !Client.safe(client.followUp).isEmpty();
+            case "Polso basso": return client.pulse < 40;
+            default: return true;
+        }
     }
 
     private void openEditor(Client existing, Client prefill) {
@@ -104,17 +145,18 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
         startActivityForResult(intent, REQUEST_EDIT);
     }
 
+    private void openDetail(Client client) {
+        Intent intent = new Intent(this, ClientDetailActivity.class);
+        intent.putExtra(ClientDetailActivity.EXTRA_ID, client.id);
+        startActivity(intent);
+    }
+
     private void startContactImport() {
         if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, REQUEST_CONTACT_PERMISSION);
             return;
         }
-        Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
-        try {
-            startActivityForResult(intent, REQUEST_PICK_CONTACT);
-        } catch (Exception e) {
-            Toast.makeText(this, "Nessuna app Rubrica disponibile", Toast.LENGTH_LONG).show();
-        }
+        startActivityForResult(new Intent(this, ContactImportActivity.class), REQUEST_IMPORT_CONTACTS);
     }
 
     @Override
@@ -130,76 +172,80 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK || data == null) return;
-        if (requestCode == REQUEST_PICK_CONTACT && data.getData() != null) {
-            importSelectedContact(data.getData());
+        if (requestCode == REQUEST_IMPORT_CONTACTS) {
+            int imported = data.getIntExtra(ContactImportActivity.EXTRA_IMPORTED, 0);
+            int skipped = data.getIntExtra(ContactImportActivity.EXTRA_SKIPPED, 0);
+            loadClients();
+            Toast.makeText(this, imported + " importati · " + skipped + " duplicati saltati", Toast.LENGTH_LONG).show();
         } else if (requestCode == REQUEST_BACKUP && data.getData() != null) {
             writeBackup(data.getData());
         } else if (requestCode == REQUEST_RESTORE && data.getData() != null) {
             askRestoreMode(data.getData());
+        } else if (requestCode == REQUEST_DRIVE_FOLDER && data.getData() != null) {
+            Uri folder = data.getData();
+            int flags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            try {
+                getContentResolver().takePersistableUriPermission(folder, flags);
+                AutomaticBackupManager.configureDriveFolder(this, folder);
+                runAutomaticBackupNow();
+            } catch (Exception e) {
+                Toast.makeText(this, "Impossibile mantenere l'accesso alla cartella Drive", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
-    private void importSelectedContact(Uri contactUri) {
-        try {
-            Client imported = readContact(contactUri);
-            Client duplicate = db.findDuplicate(imported.phone, imported.email);
-            if (duplicate == null) {
-                openEditor(null, imported);
-                return;
-            }
-            new AlertDialog.Builder(this)
-                    .setTitle("Cliente già presente")
-                    .setMessage("Esiste già “" + duplicate.fullName() + "” con lo stesso telefono o email. Vuoi aggiornarlo con i dati della rubrica?")
-                    .setPositiveButton("Aggiorna", (d, w) -> openEditor(duplicate, imported))
-                    .setNeutralButton("Crea comunque", (d, w) -> openEditor(null, imported))
-                    .setNegativeButton("Annulla", null)
-                    .show();
+    private void chooseDriveFolder() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        startActivityForResult(intent, REQUEST_DRIVE_FOLDER);
+    }
+
+    private void runAutomaticBackupNow() {
+        Toast.makeText(this, "Backup in corso…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            AutomaticBackupManager.Result result = AutomaticBackupManager.perform(getApplicationContext());
+            runOnUiThread(() -> Toast.makeText(this, result.summary(), Toast.LENGTH_LONG).show());
+        }, "edil-manual-auto-backup").start();
+    }
+
+    private void askRestoreLatestLocal() {
+        File backup = AutomaticBackupManager.latestLocalBackup(this);
+        if (backup == null) {
+            Toast.makeText(this, "Nessun backup automatico locale disponibile", Toast.LENGTH_LONG).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Ripristina backup locale")
+                .setMessage("Vuoi unire l'ultimo backup locale con l'archivio attuale?")
+                .setPositiveButton("Unisci", (dialog, which) -> restoreLocalBackup(backup, false))
+                .setNeutralButton("Sostituisci", (dialog, which) -> confirmReplaceLocal(backup))
+                .setNegativeButton("Annulla", null)
+                .show();
+    }
+
+    private void confirmReplaceLocal(File backup) {
+        new AlertDialog.Builder(this)
+                .setTitle("Conferma sostituzione")
+                .setMessage("Tutti i clienti attuali verranno sostituiti dall'ultimo backup locale.")
+                .setPositiveButton("Sostituisci", (dialog, which) -> restoreLocalBackup(backup, true))
+                .setNegativeButton("Annulla", null)
+                .show();
+    }
+
+    private void restoreLocalBackup(File backup, boolean replace) {
+        try (InputStream in = new FileInputStream(backup)) {
+            ByteArrayOutputStream data = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = in.read(buffer)) != -1) data.write(buffer, 0, count);
+            int imported = db.importJson(data.toString(StandardCharsets.UTF_8.name()), replace);
+            loadClients();
+            Toast.makeText(this, imported + " clienti ripristinati dal telefono", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Impossibile leggere il contatto selezionato", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private Client readContact(Uri uri) {
-        Client client = new Client();
-        client.contactUri = uri.toString();
-        String contactId = "";
-        try (Cursor cursor = getContentResolver().query(uri,
-                new String[]{ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME},
-                null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                contactId = cursor.getString(0);
-                splitName(cursor.getString(1), client);
-            }
-        }
-        if (contactId.isEmpty()) return client;
-        ContentResolver resolver = getContentResolver();
-        client.phone = firstValue(resolver, ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?", contactId);
-        client.email = firstValue(resolver, ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-                ContactsContract.CommonDataKinds.Email.ADDRESS,
-                ContactsContract.CommonDataKinds.Email.CONTACT_ID + "=?", contactId);
-        client.address = firstValue(resolver, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI,
-                ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS,
-                ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID + "=?", contactId);
-        return client;
-    }
-
-    private String firstValue(ContentResolver resolver, Uri uri, String column, String selection, String contactId) {
-        try (Cursor cursor = resolver.query(uri, new String[]{column}, selection,
-                new String[]{contactId}, null)) {
-            if (cursor != null && cursor.moveToFirst()) return Client.safe(cursor.getString(0));
-        }
-        return "";
-    }
-
-    private void splitName(String displayName, Client client) {
-        String name = Client.safe(displayName);
-        int firstSpace = name.indexOf(' ');
-        if (firstSpace < 0) client.firstName = name;
-        else {
-            client.firstName = name.substring(0, firstSpace).trim();
-            client.lastName = name.substring(firstSpace + 1).trim();
+            Toast.makeText(this, "Backup locale non valido o danneggiato", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -262,6 +308,8 @@ public class MainActivity extends Activity implements ClientAdapter.Listener {
             Toast.makeText(this, "Backup non valido o danneggiato", Toast.LENGTH_LONG).show();
         }
     }
+
+    @Override public void onOpen(Client client) { openDetail(client); }
 
     @Override public void onCall(Client client) {
         if (client.phone.isEmpty()) return;

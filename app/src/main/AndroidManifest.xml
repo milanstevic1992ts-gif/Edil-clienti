@@ -3,6 +3,7 @@
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -11,6 +12,19 @@
         android:roundIcon="@drawable/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.EdilClienti">
+
+        <service
+            android:name=".AutoBackupJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <activity
+            android:name=".ContactImportActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ClientDetailActivity"
+            android:exported="false" />
 
         <activity
             android:name=".EditClientActivity"

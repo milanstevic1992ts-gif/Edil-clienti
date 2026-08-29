@@ -13,10 +13,25 @@ App Android nativa per la gestione clienti di **EDIL MILAN STEVIC — Restauri &
 - controllo duplicati tramite telefono normalizzato ed email;
 - salvataggio nella rubrica con scheda già compilata e scelta dell’account Google/Telefono;
 - aggiornamento del contatto originario quando il cliente è stato importato dalla rubrica;
-- backup JSON e ripristino con modalità **Unisci** o **Sostituisci**.
+- backup JSON manuale e ripristino con modalità **Unisci** o **Sostituisci**;
+- backup automatico giornaliero sul telefono, con conservazione degli ultimi 10 file;
+- seconda copia automatica nella cartella Google Drive scelta dall’utente, anch’essa limitata agli ultimi 10 file;
+- ripristino diretto dell’ultimo backup locale e ripristino dei file Drive dal selettore Android;
 - layout ottimizzato per smartphone con schede compatte, iniziali cliente e pulsante Salva sempre visibile.
+- temperatura commerciale manuale separata dal Polso del rapporto;
+- Polso 0–100 con sei segnali rapidi, motivazioni, note e storico;
+- fase cliente, compleanno, follow-up e filtri operativi;
+- campi predisposti per analisi IA/n8n futura, senza dipendenze esterne attive.
+- importazione multipla con selezione dalla rubrica Google/telefono;
+- coda eventi offline pronta per Bridge e automazioni future.
 
 I dati dell’app sono conservati in un database SQLite privato sul dispositivo. Il permesso di lettura della rubrica viene richiesto soltanto quando si usa **Importa rubrica**.
+
+## Backup automatici
+
+Dal menu in alto si può scegliere **Configura cartella Google Drive** e selezionare una cartella del proprio Drive. Android conserva l’autorizzazione alla cartella senza salvare password Google nell’app. **Esegui backup automatico ora** crea subito entrambe le copie; in seguito Android pianifica il backup ogni 24 ore e dopo i riavvii.
+
+La copia sul telefono viene creata anche senza rete o senza Drive configurato. Al superamento di 10 file, per ciascuna destinazione viene eliminato automaticamente il più vecchio. Se Drive è temporaneamente offline, il backup locale continua comunque a essere creato.
 
 ## Requisiti di compilazione
 
@@ -61,7 +76,9 @@ In questa versione non esiste alcun file in `.github/workflows`: nessuna Action 
 
 ```text
 app/src/main/java/it/edilmilan/clienti/
-├── MainActivity.java          # elenco, ricerca, rubrica e backup
+├── MainActivity.java          # elenco, ricerca, rubrica e comandi backup
+├── AutomaticBackupManager.java # copie telefono/Drive e rotazione ultimi 10
+├── AutoBackupJobService.java  # pianificazione giornaliera Android
 ├── EditClientActivity.java    # scheda cliente e salvataggio contatto
 ├── ClientDbHelper.java        # database SQLite e JSON
 ├── ClientAdapter.java         # schede elenco
@@ -70,4 +87,4 @@ app/src/main/java/it/edilmilan/clienti/
 
 ## Privacy
 
-L’app non invia clienti o rubrica a server esterni. WhatsApp viene aperto soltanto quando l’utente preme il relativo pulsante. Il backup JSON viene scritto esclusivamente nel percorso scelto dall’utente tramite il selettore file Android.
+L’app non invia clienti o rubrica a server propri. WhatsApp viene aperto soltanto quando l’utente preme il relativo pulsante. I dati arrivano a Google Drive solo dopo che l’utente ha scelto esplicitamente una cartella tramite il selettore documenti Android.

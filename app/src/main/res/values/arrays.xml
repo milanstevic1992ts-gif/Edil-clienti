@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="client_temperatures">
+        <item>Caldo</item>
+        <item>Da coltivare</item>
+        <item>Freddo</item>
+        <item>Dormiente</item>
+    </string-array>
+    <string-array name="relationship_phases">
+        <item>Nuovo contatto</item>
+        <item>Sopralluogo</item>
+        <item>Preventivo da preparare</item>
+        <item>Preventivo inviato</item>
+        <item>In trattativa</item>
+        <item>Lavoro confermato</item>
+        <item>Lavoro in corso</item>
+        <item>Cliente acquisito</item>
+        <item>Da ricontattare</item>
+        <item>Chiuso</item>
+    </string-array>
+    <string-array name="relationship_reasons">
+        <item>Qualità lavoro</item>
+        <item>Tempi</item>
+        <item>Prezzo</item>
+        <item>Comunicazione</item>
+        <item>Fiducia</item>
+        <item>Nuovo lavoro</item>
+        <item>Altro</item>
+    </string-array>
+</resources>

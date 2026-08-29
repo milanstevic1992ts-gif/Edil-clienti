@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.0
+
+- ripristinata temperatura commerciale: Caldo, Da coltivare, Freddo, Dormiente;
+- nuova dashboard cliente separata dalla schermata di modifica;
+- ripristinato Polso del rapporto 0–100 con valore iniziale 50;
+- segnali rapidi Positivo, Neutro, Dubbioso, Curioso, Negativo e Teso;
+- motivazioni e dettaglio facoltativo per ogni segnale;
+- storico completo con variazione, valore successivo, data e andamento;
+- fase del rapporto, compleanno e follow-up;
+- correzione manuale del Polso registrata nello storico;
+- predisposizione temperatura IA futura senza attivare servizi esterni;
+- filtri rapidi Tutti, Caldi, Da coltivare, Follow-up e Polso basso;
+- backup JSON aggiornato per includere tutti i nuovi dati e lo storico;
+- migrazione sicura del database dalla versione 1 alla versione 2;
+- test unitari per limiti del Polso e variazioni dei segnali.
+- importazione multipla selettiva da rubrica Google/telefono con duplicati saltati.
+- coda eventi offline per futura integrazione Bridge, n8n e IA.
+- backup automatico giornaliero sul telefono e nella cartella Google Drive autorizzata;
+- rotazione indipendente degli ultimi 10 backup locali e degli ultimi 10 su Drive;
+- backup locale garantito anche quando Drive è offline o non configurato;
+- comando di backup immediato e ripristino diretto dell’ultima copia locale.
+
 ## 1.1.0
 
 - nuova schermata principale più pulita e utilizzabile con una mano;

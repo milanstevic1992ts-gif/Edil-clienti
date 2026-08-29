@@ -28,6 +28,42 @@
             <TextView style="@style/FieldLabel" android:text="Email" />
             <EditText android:id="@+id/emailInput" style="@style/ClientField" android:hint="Indirizzo email" android:inputType="textEmailAddress" android:singleLine="true" />
 
+            <TextView style="@style/SectionLabel" android:text="RAPPORTO E OPPORTUNITÀ" />
+            <TextView style="@style/FieldLabel" android:text="Temperatura commerciale" />
+            <Spinner
+                android:id="@+id/temperatureInput"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/field_background"
+                android:entries="@array/client_temperatures"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp" />
+            <TextView style="@style/FieldLabel" android:text="Fase del rapporto" />
+            <Spinner
+                android:id="@+id/phaseInput"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/field_background"
+                android:entries="@array/relationship_phases"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/card_background" android:orientation="vertical" android:padding="12dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Correzione manuale del Polso" android:textColor="@color/black" android:textStyle="bold" />
+                    <TextView android:id="@+id/pulseEditValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="50/100" android:textColor="@color/orange_dark" android:textSize="18sp" android:textStyle="bold" />
+                </LinearLayout>
+                <SeekBar android:id="@+id/pulseInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:max="100" android:progress="50" android:progressTint="@color/orange" android:thumbTint="@color/orange_dark" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Usalo soltanto per una correzione. Normalmente il Polso cambia dai sei segnali nella dashboard cliente." android:textColor="@color/text_secondary" android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView style="@style/SectionLabel" android:text="PROMEMORIA" />
+            <TextView style="@style/FieldLabel" android:text="Compleanno" />
+            <EditText android:id="@+id/birthdayInput" style="@style/ClientField" android:focusable="false" android:hint="Tocca per scegliere la data" android:inputType="none" />
+            <TextView style="@style/FieldLabel" android:text="Follow-up / ricontatto" />
+            <EditText android:id="@+id/followUpInput" style="@style/ClientField" android:focusable="false" android:hint="Tocca per scegliere la data" android:inputType="none" />
+
             <TextView style="@style/SectionLabel" android:text="CANTIERE E APPUNTI" />
             <TextView style="@style/FieldLabel" android:text="Indirizzo del lavoro" />
             <EditText android:id="@+id/addressInput" style="@style/ClientField" android:hint="Via, numero civico, località" android:inputType="textPostalAddress|textCapSentences" />

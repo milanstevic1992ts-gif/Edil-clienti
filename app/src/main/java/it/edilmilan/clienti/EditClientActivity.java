@@ -2,6 +2,7 @@ package it.edilmilan.clienti;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,8 +11,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.SeekBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 public class EditClientActivity extends Activity {
     public static final String EXTRA_ID = "client_id";
@@ -25,7 +32,12 @@ public class EditClientActivity extends Activity {
     private ClientDbHelper db;
     private Client client;
     private EditText firstName, lastName, phone, email, address, notes;
+    private EditText birthday, followUp;
+    private Spinner temperature, phase;
+    private SeekBar pulse;
+    private TextView pulseValue;
     private CheckBox saveToContacts;
+    private int initialPulse = 50;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +49,7 @@ public class EditClientActivity extends Activity {
         long id = getIntent().getLongExtra(EXTRA_ID, 0);
         client = id > 0 ? db.get(id) : new Client();
         if (client == null) client = new Client();
+        initialPulse = client.pulse;
         applyPrefill(getIntent());
         showClient();
 
@@ -57,7 +70,20 @@ public class EditClientActivity extends Activity {
         email = findViewById(R.id.emailInput);
         address = findViewById(R.id.addressInput);
         notes = findViewById(R.id.notesInput);
+        birthday = findViewById(R.id.birthdayInput);
+        followUp = findViewById(R.id.followUpInput);
+        temperature = findViewById(R.id.temperatureInput);
+        phase = findViewById(R.id.phaseInput);
+        pulse = findViewById(R.id.pulseInput);
+        pulseValue = findViewById(R.id.pulseEditValue);
         saveToContacts = findViewById(R.id.saveToContactsCheck);
+        pulse.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) { pulseValue.setText(progress + "/100"); }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
+            @Override public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+        birthday.setOnClickListener(v -> chooseDate(birthday));
+        followUp.setOnClickListener(v -> chooseDate(followUp));
     }
 
     private void applyPrefill(Intent intent) {
@@ -80,6 +106,12 @@ public class EditClientActivity extends Activity {
         email.setText(client.email);
         address.setText(client.address);
         notes.setText(client.notes);
+        birthday.setText(client.birthday);
+        followUp.setText(client.followUp);
+        setSpinnerSelection(temperature, R.array.client_temperatures, client.temperature);
+        setSpinnerSelection(phase, R.array.relationship_phases, client.relationshipPhase);
+        pulse.setProgress(Client.clampPulse(client.pulse));
+        pulseValue.setText(Client.clampPulse(client.pulse) + "/100");
     }
 
     private void save() {
@@ -89,6 +121,11 @@ public class EditClientActivity extends Activity {
         client.email = Client.safe(email.getText().toString());
         client.address = Client.safe(address.getText().toString());
         client.notes = Client.safe(notes.getText().toString());
+        client.birthday = Client.safe(birthday.getText().toString());
+        client.followUp = Client.safe(followUp.getText().toString());
+        client.temperature = temperature.getSelectedItem().toString();
+        client.relationshipPhase = phase.getSelectedItem().toString();
+        client.pulse = Client.clampPulse(pulse.getProgress());
 
         if (client.fullName().isEmpty()) {
             firstName.setError("Inserisci almeno il nome del cliente");
@@ -115,11 +152,38 @@ public class EditClientActivity extends Activity {
     }
 
     private void persist() {
-        db.save(client);
+        long id = db.save(client);
+        db.recordPulseCorrection(id, initialPulse, client.pulse);
         setResult(RESULT_OK);
         Toast.makeText(this, "Cliente salvato", Toast.LENGTH_SHORT).show();
         if (saveToContacts.isChecked()) openSystemContactEditor();
         finish();
+    }
+
+    private void setSpinnerSelection(Spinner spinner, int arrayResource, String value) {
+        String[] values = getResources().getStringArray(arrayResource);
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) {
+                spinner.setSelection(i);
+                return;
+            }
+        }
+        spinner.setSelection(0);
+    }
+
+    private void chooseDate(EditText target) {
+        Calendar calendar = Calendar.getInstance();
+        String current = target.getText().toString();
+        if (!current.isEmpty()) {
+            try {
+                calendar.setTime(new SimpleDateFormat("dd/MM/yyyy", Locale.ITALY).parse(current));
+            } catch (Exception ignored) { }
+        }
+        new DatePickerDialog(this, (view, year, month, day) -> {
+            Calendar chosen = Calendar.getInstance();
+            chosen.set(year, month, day);
+            target.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.ITALY).format(chosen.getTime()));
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
     }
 
     private void openSystemContactEditor() {

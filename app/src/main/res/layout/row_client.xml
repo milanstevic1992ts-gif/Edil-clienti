@@ -43,6 +43,12 @@
         android:textColor="@color/text_secondary"
         android:textSize="12sp" />
 
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp" android:orientation="horizontal">
+        <TextView android:id="@+id/clientTemperature" android:layout_width="0dp" android:layout_height="34dp" android:layout_weight="1" android:background="@drawable/button_outline" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:padding="5dp" android:textColor="@color/black" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:id="@+id/clientPhase" android:layout_width="0dp" android:layout_height="34dp" android:layout_marginStart="7dp" android:layout_weight="1.3" android:background="@drawable/button_soft" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:padding="5dp" android:textColor="@color/black" android:textSize="10sp" android:textStyle="bold" />
+        <TextView android:id="@+id/clientPulse" android:layout_width="0dp" android:layout_height="34dp" android:layout_marginStart="7dp" android:layout_weight="0.7" android:background="@drawable/button_dark" android:gravity="center" android:textColor="@color/white" android:textSize="11sp" android:textStyle="bold" />
+    </LinearLayout>
+
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:orientation="horizontal">
         <Button
             android:id="@+id/callButton"

@@ -13,6 +13,7 @@ import java.util.List;
 
 public class ClientAdapter extends BaseAdapter {
     public interface Listener {
+        void onOpen(Client client);
         void onCall(Client client);
         void onWhatsApp(Client client);
         void onEdit(Client client);
@@ -54,12 +55,15 @@ public class ClientAdapter extends BaseAdapter {
         if (!client.address.isEmpty()) details += (details.isEmpty() ? "" : "\n") + client.address;
         holder.details.setText(details);
         holder.details.setVisibility(details.isEmpty() ? View.GONE : View.VISIBLE);
+        holder.temperature.setText(client.temperature);
+        holder.phase.setText(client.relationshipPhase);
+        holder.pulse.setText("Polso " + client.pulse);
         holder.call.setEnabled(!client.phone.isEmpty());
         holder.whatsapp.setEnabled(!client.phone.isEmpty());
         holder.call.setOnClickListener(v -> listener.onCall(client));
         holder.whatsapp.setOnClickListener(v -> listener.onWhatsApp(client));
         holder.edit.setOnClickListener(v -> listener.onEdit(client));
-        convertView.setOnClickListener(v -> listener.onEdit(client));
+        convertView.setOnClickListener(v -> listener.onOpen(client));
         return convertView;
     }
 
@@ -71,13 +75,16 @@ public class ClientAdapter extends BaseAdapter {
     }
 
     private static class ViewHolder {
-        final TextView initials, name, phone, details;
+        final TextView initials, name, phone, details, temperature, phase, pulse;
         final Button call, whatsapp, edit;
         ViewHolder(View view) {
             initials = view.findViewById(R.id.clientInitials);
             name = view.findViewById(R.id.clientName);
             phone = view.findViewById(R.id.clientPhone);
             details = view.findViewById(R.id.clientDetails);
+            temperature = view.findViewById(R.id.clientTemperature);
+            phase = view.findViewById(R.id.clientPhase);
+            pulse = view.findViewById(R.id.clientPulse);
             call = view.findViewById(R.id.callButton);
             whatsapp = view.findViewById(R.id.whatsappButton);
             edit = view.findViewById(R.id.editButton);

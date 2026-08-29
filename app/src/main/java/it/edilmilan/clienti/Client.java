@@ -9,6 +9,13 @@ public class Client {
     public String address = "";
     public String notes = "";
     public String contactUri = "";
+    public String temperature = "Da coltivare";
+    public String aiTemperature = "Non analizzata";
+    public String relationshipPhase = "Nuovo contatto";
+    public int pulse = 50;
+    public String birthday = "";
+    public String followUp = "";
+    public long lastInteractionAt;
     public long createdAt;
     public long updatedAt;
 
@@ -18,5 +25,9 @@ public class Client {
 
     public static String safe(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    public static int clampPulse(int value) {
+        return Math.max(0, Math.min(100, value));
     }
 }

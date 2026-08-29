@@ -47,6 +47,15 @@
             <Button android:id="@+id/addButton" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:background="@drawable/button_primary" android:text="＋  Nuovo cliente" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
             <Button android:id="@+id/importButton" android:layout_width="0dp" android:layout_height="52dp" android:layout_marginStart="10dp" android:layout_weight="1" android:background="@drawable/button_outline" android:text="⇩  Dalla rubrica" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
         </LinearLayout>
+        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="9dp" android:scrollbars="none">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/filterAll" style="@style/FilterButton" android:text="Tutti" />
+                <Button android:id="@+id/filterHot" style="@style/FilterButton" android:layout_marginStart="7dp" android:text="Caldi" />
+                <Button android:id="@+id/filterGrow" style="@style/FilterButton" android:layout_marginStart="7dp" android:text="Da coltivare" />
+                <Button android:id="@+id/filterFollowUp" style="@style/FilterButton" android:layout_marginStart="7dp" android:text="Follow-up" />
+                <Button android:id="@+id/filterRisk" style="@style/FilterButton" android:layout_marginStart="7dp" android:text="Polso basso" />
+            </LinearLayout>
+        </HorizontalScrollView>
     </LinearLayout>
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="18dp" android:paddingTop="3dp" android:paddingEnd="18dp" android:paddingBottom="7dp">

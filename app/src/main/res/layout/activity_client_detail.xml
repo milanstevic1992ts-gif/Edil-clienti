@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/surface_alt">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="10dp" android:paddingTop="10dp" android:paddingEnd="12dp" android:paddingBottom="10dp" android:background="@color/black">
+        <Button android:id="@+id/detailBackButton" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/button_dark" android:text="‹" android:textColor="@color/white" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/detailName" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" />
+            <TextView android:id="@+id/detailPhase" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="@color/orange" android:textSize="12sp" android:textStyle="bold" />
+        </LinearLayout>
+        <Button android:id="@+id/detailEditButton" android:layout_width="52dp" android:layout_height="44dp" android:background="@drawable/button_primary" android:text="✎" android:textColor="@color/black" android:textSize="20sp" />
+    </LinearLayout>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="14dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:id="@+id/temperatureBadge" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:background="@drawable/button_outline" android:gravity="center" android:textColor="@color/black" android:textStyle="bold" />
+                <TextView android:id="@+id/followUpBadge" android:layout_width="0dp" android:layout_height="44dp" android:layout_marginStart="9dp" android:layout_weight="1" android:background="@drawable/button_soft" android:gravity="center" android:ellipsize="end" android:maxLines="1" android:padding="6dp" android:textColor="@color/black" android:textSize="12sp" android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:background="@drawable/card_background" android:orientation="vertical" android:padding="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="POLSO DEL RAPPORTO" android:textColor="@color/text_secondary" android:textSize="11sp" android:textStyle="bold" />
+                        <TextView android:id="@+id/pulseTrend" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:textColor="@color/black" android:textSize="14sp" android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView android:id="@+id/pulseValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/orange_dark" android:textSize="30sp" android:textStyle="bold" />
+                </LinearLayout>
+                <ProgressBar android:id="@+id/pulseBar" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="10dp" android:layout_marginTop="12dp" android:max="100" android:progressDrawable="@drawable/pulse_track" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="7dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0 · Rapporto critico" android:textColor="@color/text_secondary" android:textSize="10sp" />
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="100 · Rapporto ottimo" android:textColor="@color/text_secondary" android:textSize="10sp" />
+                </LinearLayout>
+                <TextView android:id="@+id/aiTemperatureLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="11dp" android:background="@drawable/button_soft" android:padding="9dp" android:textColor="@color/text_secondary" android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal">
+                <Button android:id="@+id/detailCallButton" android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1" android:background="@drawable/button_dark" android:text="☎  Chiama" android:textAllCaps="false" android:textColor="@color/white" android:textStyle="bold" />
+                <Button android:id="@+id/detailWhatsappButton" android:layout_width="0dp" android:layout_height="48dp" android:layout_marginStart="9dp" android:layout_weight="1" android:background="@drawable/button_primary" android:text="WhatsApp" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView style="@style/SectionLabel" android:layout_marginTop="18dp" android:text="TEMPERATURA COMMERCIALE" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="9dp" android:text="Valutazione manuale e separata dal Polso del rapporto." android:textColor="@color/text_secondary" android:textSize="12sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/tempHot" style="@style/TemperatureButton" android:background="@drawable/signal_negative" android:text="Caldo" />
+                <Button android:id="@+id/tempGrow" style="@style/TemperatureButton" android:layout_marginStart="7dp" android:background="@drawable/signal_warning" android:text="Da coltivare" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp" android:orientation="horizontal">
+                <Button android:id="@+id/tempCold" style="@style/TemperatureButton" android:background="@drawable/button_soft" android:text="Freddo" />
+                <Button android:id="@+id/tempDormant" style="@style/TemperatureButton" android:layout_marginStart="7dp" android:background="@drawable/button_dark" android:text="Dormiente" android:textColor="@color/white" />
+            </LinearLayout>
+
+            <TextView style="@style/SectionLabel" android:layout_marginTop="18dp" android:text="COM’È ANDATO L’ULTIMO CONTATTO?" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="9dp" android:text="Tocca un segnale: scegli il motivo e aggiungi una nota facoltativa." android:textColor="@color/text_secondary" android:textSize="12sp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/signalPositive" style="@style/SignalButton" android:background="@drawable/signal_positive" android:text="Positivo\n+6" />
+                <Button android:id="@+id/signalNeutral" style="@style/SignalButton" android:layout_marginStart="7dp" android:background="@drawable/signal_neutral" android:text="Neutro\n0" />
+                <Button android:id="@+id/signalDoubtful" style="@style/SignalButton" android:layout_marginStart="7dp" android:background="@drawable/signal_warning" android:text="Dubbioso\n−4" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp" android:orientation="horizontal">
+                <Button android:id="@+id/signalCurious" style="@style/SignalButton" android:background="@drawable/signal_positive" android:text="Curioso\n+3" />
+                <Button android:id="@+id/signalNegative" style="@style/SignalButton" android:layout_marginStart="7dp" android:background="@drawable/signal_negative" android:text="Negativo\n−8" />
+                <Button android:id="@+id/signalTense" style="@style/SignalButton" android:layout_marginStart="7dp" android:background="@drawable/signal_negative" android:text="Teso\n−12" />
+            </LinearLayout>
+
+            <TextView style="@style/SectionLabel" android:layout_marginTop="18dp" android:text="PROMEMORIA E DATI" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/card_background" android:orientation="vertical" android:padding="13dp">
+                <TextView android:id="@+id/detailPhone" style="@style/DetailLine" />
+                <TextView android:id="@+id/detailEmail" style="@style/DetailLine" />
+                <TextView android:id="@+id/detailAddress" style="@style/DetailLine" />
+                <TextView android:id="@+id/detailBirthday" style="@style/DetailLine" />
+                <TextView android:id="@+id/detailFollowUp" style="@style/DetailLine" />
+                <TextView android:id="@+id/detailNotes" style="@style/DetailLine" android:paddingBottom="0dp" />
+            </LinearLayout>
+
+            <TextView style="@style/SectionLabel" android:layout_marginTop="18dp" android:text="STORICO DEL RAPPORTO" />
+            <TextView android:id="@+id/emptyHistory" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/history_item" android:gravity="center" android:padding="16dp" android:text="Nessun segnale registrato. Il Polso parte da 50." android:textColor="@color/text_secondary" android:textSize="13sp" />
+            <LinearLayout android:id="@+id/historyContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/surface_alt">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="12dp" android:background="@color/black">
+        <Button android:id="@+id/importBackButton" android:layout_width="48dp" android:layout_height="48dp" android:background="@drawable/button_dark" android:text="‹" android:textColor="@color/white" android:textSize="28sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Importa dalla rubrica" android:textColor="@color/white" android:textSize="20sp" android:textStyle="bold" />
+            <TextView android:id="@+id/importCountLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Caricamento contatti…" android:textColor="@color/orange" android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="16dp" android:paddingTop="12dp" android:paddingEnd="16dp" android:paddingBottom="8dp" android:text="Seleziona i clienti da importare. I duplicati vengono riconosciuti tramite telefono o email." android:textColor="@color/text_secondary" android:textSize="13sp" />
+    <Button android:id="@+id/selectAllContactsButton" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginStart="14dp" android:layout_marginEnd="14dp" android:background="@drawable/button_outline" android:text="Seleziona tutti" android:textAllCaps="false" android:textColor="@color/black" android:textStyle="bold" />
+    <ListView
+        android:id="@+id/contactsImportList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:choiceMode="multipleChoice"
+        android:divider="#E5DFDB"
+        android:dividerHeight="1dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@color/white" android:elevation="8dp" android:padding="12dp">
+        <Button android:id="@+id/importSelectedButton" android:layout_width="match_parent" android:layout_height="56dp" android:background="@drawable/button_primary" android:text="Importa selezionati" android:textAllCaps="false" android:textColor="@color/black" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>
