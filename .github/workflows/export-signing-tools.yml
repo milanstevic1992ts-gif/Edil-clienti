@@ -1,0 +1,39 @@
+name: Export Android signing tools
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Locate latest Android Build Tools
+        id: tools
+        run: |
+          TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          test -x "$TOOLS_DIR/apksigner"
+          test -x "$TOOLS_DIR/zipalign"
+          echo "dir=$TOOLS_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare signing tools
+        env:
+          TOOLS_DIR: ${{ steps.tools.outputs.dir }}
+        run: |
+          mkdir -p android-signing-tools/lib
+          cp "$TOOLS_DIR/apksigner" android-signing-tools/
+          cp "$TOOLS_DIR/zipalign" android-signing-tools/
+          cp "$TOOLS_DIR/lib/apksigner.jar" android-signing-tools/lib/
+
+      - name: Upload signing tools
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-signing-tools
+          path: android-signing-tools
+          if-no-files-found: error
+          retention-days: 1
